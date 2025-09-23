@@ -11,16 +11,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN --mount=type=secret,id=HF_TOKEN \
-    export HF_TOKEN=$(cat /run/secrets/HF_TOKEN) && \
-    pip install -r requirements.txt
-
 # Download the model weights from Hugging Face and pre-warm the model.
 # This executes the expensive model loading step during the build process.
-RUN /bin/sh -c ' \
+RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
+    export HF_TOKEN=$(cat /run/secrets/HF_TOKEN) && \
     echo "Downloading model weights..." && \
-    huggingface-cli download ${MODEL_NAME} --local-dir /model-cache && \
+    huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
     echo "Starting vLLM server for pre-warming..." && \
     python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} & \
     VLLM_PID=$! && \
