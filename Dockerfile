@@ -3,8 +3,6 @@ FROM vllm/vllm-openai:latest
 # Set environment variables for vLLM and Hugging Face
 ENV MODEL_NAME=google/gemma-3-1b-it
 ENV HF_HOME=/model-cache
-# Prevent the container from trying to contact Hugging Face Hub at runtime.
-ENV HF_HUB_OFFLINE=1
 
 # Install curl for the pre-warming step and clean up apt cache to reduce image size.
 RUN apt-get update && \
@@ -22,10 +20,10 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     VLLM_PID=$! && \
     echo "Waiting for vLLM server to be healthy (will try for 60 seconds)..." && \
     tries=0; \
-    while ! curl -s -f -o /dev/null http://127.0.0.1:8000/health; do \
+    while ! curl -s --fail --max-time 5 -o /dev/null http://127.0.0.1:8000/health; do \
       sleep 1; \
       tries=$((tries+1)); \
-      if [ "$tries" -gt 60 ]; then echo "vLLM server failed to start"; exit 1; fi; \
+      if [ "$tries" -gt 300 ]; then echo "vLLM server failed to start after 300 seconds"; exit 1; fi; \
     done && \
     echo "vLLM server started. Pre-warming model..." && \
     curl -X POST http://127.0.0.1:8000/v1/completions \
@@ -33,6 +31,9 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
       -d "{ \"model\": \"${MODEL_NAME}\", \"prompt\": \"warmup\", \"max_tokens\": 1, \"stream\": false }" > /dev/null && \
     echo "Model pre-warmed. Stopping vLLM server..." && \
     kill $VLLM_PID'
+
+# Prevent the final container from trying to contact Hugging Face Hub at runtime.
+ENV HF_HUB_OFFLINE=1
 
 # Set the entrypoint to start the vLLM OpenAI-compatible server
 ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
