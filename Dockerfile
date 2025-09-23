@@ -1,10 +1,14 @@
 FROM ollama/ollama:latest
+# Start from the official vLLM image which has all necessary dependencies.
 FROM vllm/vllm-openai:latest
 
 # Listen on all interfaces, port 8080
 ENV OLLAMA_HOST 0.0.0.0:8080
+# Set environment variables for the model and cache location.
 ENV MODEL_NAME=google/gemma-3-1b-it
 ENV HF_HOME=/model-cache
+# Prevent the container from trying to contact Hugging Face Hub at runtime.
+ENV HF_HUB_OFFLINE=1
 
 # Store model weight files in /models
 ENV OLLAMA_MODELS /models
@@ -23,6 +27,7 @@ RUN ollama serve & sleep 5 && ollama pull $MODEL
 # This is in a separate layer to leverage Docker's build cache.
 # Download the model weights from Hugging Face during the build.
 # This requires the HF_TOKEN secret to be available.
+# This requires the HF_TOKEN secret to be available via --secret.
 RUN --mount=type=secret,id=HF_TOKEN \
     HF_TOKEN=$(cat /run/secrets/HF_TOKEN) huggingface-cli download ${MODEL_NAME}
     
@@ -30,6 +35,9 @@ RUN --mount=type=secret,id=HF_TOKEN \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
+    huggingface-cli download ${MODEL_NAME} \
+    --local-dir ${HF_HOME} \
+    --local-dir-use-symlinks False
 
 
 RUN --mount=type=secret,id=HF_TOKEN \
@@ -73,6 +81,7 @@ ENTRYPOINT ["ollama", "serve"]
 # Prevent the container from trying to contact Hugging Face Hub at runtime.
 ENV HF_HUB_OFFLINE=1
 
+# Set the entrypoint to start the vLLM OpenAI-compatible server.
 ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT:-8000} \
     --model ${MODEL_NAME} \

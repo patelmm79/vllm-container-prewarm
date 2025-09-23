@@ -7,6 +7,11 @@ steps:
     - -c
     - |
         SECRET_TOKEN="$$HF_TOKEN" docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN .
+        docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN,env=HF_TOKEN .
+    - build
+    - --tag=${_IMAGE}
+    - --secret=id=HF_TOKEN
+    - .
 
 
 
