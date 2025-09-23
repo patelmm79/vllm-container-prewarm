@@ -23,7 +23,7 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     while ! curl -s --fail --max-time 5 -o /dev/null http://127.0.0.1:8000/health; do \
       sleep 1; \
       tries=$((tries+1)); \
-      if [ "$tries" -gt 2000 ]; then echo "vLLM server failed to start after 2000 seconds"; exit 1; fi; \
+      if [ "$tries" -gt 4000 ]; then echo "vLLM server failed to start after 4000 seconds"; exit 1; fi; \
     done && \
     echo "vLLM server started. Pre-warming model..." && \
     curl -X POST http://127.0.0.1:8000/v1/completions \
