@@ -6,14 +6,7 @@ steps:
   args: 
     - -c
     - |
-        SECRET_TOKEN="$$HF_TOKEN" docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN .
         docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN,env=HF_TOKEN .
-    - build
-    - --tag=${_IMAGE}
-    - --secret=id=HF_TOKEN
-    - .
-
-
 
 availableSecrets:
   secretManager:
@@ -30,4 +23,5 @@ substitutions:
 options:
   dynamicSubstitutions: true
   machineType: "E2_HIGHCPU_32"
+  logging: CLOUD_LOGGING_ONLY
  
