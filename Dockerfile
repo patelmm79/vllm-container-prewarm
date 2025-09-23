@@ -46,27 +46,28 @@ RUN /bin/sh -c ' \
     VLLM_PID=$! && \
     echo "Waiting for vLLM server to start..." && \
     tries=0; \
-    while ! curl -s -o /dev/null http://127.0.0.1:8080; do \
-    while ! curl -s -f -o /dev/null http://127.0.0.1:8000/health; do \
+    while ! curl -s -f -o /dev/null http://127.0.0.1:8080; do \
       sleep 1; \
       tries=$((tries+1)); \
-      if [ "$tries" -gt 30 ]; then echo "Server failed to start"; exit 1; fi; \
-      if [ "$tries" -gt 60 ]; then echo "Server failed to start"; exit 1; fi; \
+      if [ "$tries" -gt 60 ]; then echo "Ollama server failed to start"; exit 1; fi; \
     done && \
     echo "Ollama server started. Pulling model..." && \
     ollama pull $MODEL && \
     echo "Model pulled. Pre-warming model..." && \
-   curl -X POST http://127.0.0.1:8080/api/generate -d "{ \"model\": \"$MODEL\", \"prompt\": \"warmup\", \"stream\": false }" > /dev/null && \
     curl -X POST http://127.0.0.1:8080/api/generate -d "{ \"model\": \"$MODEL\", \"prompt\": \"warmup\", \"stream\": false }" > /dev/null && \
+    tries=0; \
+    while ! curl -s -f -o /dev/null http://127.0.0.1:8000/health; do \
+      sleep 1; \
+      tries=$((tries+1)); \
+      if [ "$tries" -gt 60 ]; then echo "vLLM server failed to start"; exit 1; fi; \
+    done && \
     echo "vLLM server started. Pre-warming model..." && \
     curl -X POST http://127.0.0.1:8000/v1/completions \
       -H "Content-Type: application/json" \
       -d "{ \"model\": \"${MODEL_NAME}\", \"prompt\": \"warmup\", \"max_tokens\": 1, \"stream\": false }" > /dev/null && \
     echo "Model pre-warmed. Stopping server..." && \
     kill $OLLAMA_PID && \
-    wait $OLLAMA_PID'
-    kill $VLLM_PID && \
-    wait $VLLM_PID'
+    kill $VLLM_PID'
 
 # Start Ollama
 ENTRYPOINT ["ollama", "serve"]
