@@ -1,5 +1,13 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
+  id: pull-cache
+  entrypoint: 'bash'
+  args:
+    - -c
+    - |
+        docker pull ${_IMAGE}:cache || echo "No cache found, continuing..."
+
+- name: 'gcr.io/cloud-builders/docker'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
@@ -7,6 +15,13 @@ steps:
     - -c
     - |
         docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN,env=HF_TOKEN .
+        docker buildx build \
+          --tag=${_IMAGE} \
+          --secret id=HF_TOKEN,env=HF_TOKEN \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --cache-from=${_IMAGE}:cache \
+          --cache-to=type=registry,ref=${_IMAGE}:cache,mode=max \
+          .
 
 
 availableSecrets:
