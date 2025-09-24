@@ -1,27 +1,37 @@
 steps:
+# Step 1: Use the gcloud builder to create an authenticated Docker config file.
+# This file will be stored in a volume that can be shared with the next step.
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:with-docker'
+  id: auth
+  entrypoint: 'gcloud'
+  args: ['auth', 'configure-docker', 'us-central1-docker.pkg.dev', '--quiet']
+  volumes:
+  - name: 'docker_config'
+    path: '/root/.docker'
+
+# Step 2: Use the standard docker builder to execute the build.
+# It mounts the authenticated config file from the previous step.
+- name: 'gcr.io/cloud-builders/docker'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
   args:
     - -c
     - |
-      # Authenticate Docker with Artifact Registry. This is crucial for buildx caching.
-      gcloud auth configure-docker us-central1-docker.pkg.dev
-
       # Create and use a 'docker-container' builder, which is required for registry cache export.
       docker buildx create --use --name mybuilder --driver docker-container
 
       docker buildx build \
         --tag=${_IMAGE} \
-        --secret id=HF_TOKEN,env=HF_TOKEN \
+        --secret id=HF_TOKEN \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --cache-from=type=registry,ref=${_IMAGE}:cache,ignore-error=true \
         --cache-to=type=registry,ref=${_IMAGE}:cache,mode=max \
         --push \
         .
-
+  volumes:
+  - name: 'docker_config'
+    path: '/root/.docker'
 
 availableSecrets:
   secretManager:
