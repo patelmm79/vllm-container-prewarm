@@ -15,15 +15,15 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     export HF_TOKEN=$(cat /run/secrets/HF_TOKEN) && \
     echo "Downloading model weights..." && \
     huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
-    echo "Starting vLLM server for pre-warming..." && \
-    python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} & \
+    echo "Starting vLLM server on CPU for pre-warming..." && \
+    python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu & \
     VLLM_PID=$! && \
     echo "Waiting for vLLM server to be healthy (will try for 60 seconds)..." && \
     tries=0; \
     while ! curl -s --fail --max-time 5 -o /dev/null http://127.0.0.1:8000/health; do \
       sleep 1; \
       tries=$((tries+1)); \
-      if [ "$tries" -gt 4000 ]; then echo "vLLM server failed to start after 4000 seconds"; exit 1; fi; \
+      if [ "$tries" -gt 2000 ]; then echo "vLLM server failed to start after 2000 seconds"; exit 1; fi; \
     done && \
     echo "vLLM server started. Pre-warming model..." && \
     curl -X POST http://127.0.0.1:8000/v1/completions \
