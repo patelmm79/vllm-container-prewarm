@@ -7,8 +7,8 @@ steps:
   args:
     - -c
     - |
-      # Install the docker component into the cloud-sdk image.
-      gcloud components install docker --quiet
+      # Install Docker CLI into the builder environment.
+      apt-get update && apt-get install -y --no-install-recommends docker.io
 
       # Authenticate Docker with Artifact Registry. This is crucial for buildx caching.
       gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
@@ -19,7 +19,7 @@ steps:
       docker buildx build \
         --tag=${_IMAGE} \
         --secret id=HF_TOKEN \
-        --build-arg BUILDKIT_INLINE_CACHE=1 \ # This is for older buildkit versions, can be removed
+        --build-arg BUILDKIT_INLINE_CACHE=1 \
         --cache-from=type=registry,ref=${_IMAGE}:cache,ignore-error=true \
         --cache-to=type=registry,ref=${_IMAGE}:cache,mode=max \
         --push \
