@@ -1,14 +1,17 @@
 steps:
-- name: 'gcr.io/cloud-builders/docker'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
   args:
     - -c
     - |
-      # Explicitly authenticate Docker with the Artifact Registry for this region.
-      # This is crucial for buildx to access the registry for caching.
+      # Authenticate Docker with Artifact Registry. This is crucial for buildx caching.
       gcloud auth configure-docker us-central1-docker.pkg.dev
+
+      # Create and use a 'docker-container' builder, which is required for registry cache export.
+      docker buildx create --use --name mybuilder --driver docker-container
+
       docker buildx build \
         --tag=${_IMAGE} \
         --secret id=HF_TOKEN,env=HF_TOKEN \
