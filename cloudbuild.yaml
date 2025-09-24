@@ -1,21 +1,18 @@
 steps:
-# Use the full cloud-sdk image which contains both 'gcloud' and 'docker'.
-- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+# Authenticate Docker with Artifact Registry.
+- name: 'gcr.io/google.com/cloudsdktool/google-cloud-cli'
+  entrypoint: 'gcloud'
+  args: ['auth', 'configure-docker', 'us-central1-docker.pkg.dev', '--quiet']
+
+# Build the image using docker buildx
+- name: 'gcr.io/cloud-builders/docker'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
   args:
     - -c
     - |
-      # Install Docker CLI into the builder environment.
-      apt-get update && apt-get install -y --no-install-recommends docker.io docker-buildx
-
-      # Authenticate Docker with Artifact Registry. This is crucial for buildx caching.
-      gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
-
-      # Create and use a 'docker-container' builder, which is required for registry cache export.
       docker buildx create --use --name mybuilder --driver docker-container
-
       docker buildx build \
         --tag=${_IMAGE} \
         --secret id=HF_TOKEN \
