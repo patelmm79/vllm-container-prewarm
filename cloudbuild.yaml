@@ -1,5 +1,6 @@
 steps:
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk:with-docker'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
