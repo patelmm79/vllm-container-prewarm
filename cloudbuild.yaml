@@ -17,6 +17,7 @@ steps:
         --tag=${_IMAGE} \
         --secret id=HF_TOKEN \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
+        --build-arg torch_cuda_arch_list="" \
         --cache-from=type=registry,ref=${_IMAGE}:cache,ignore-error=true \
         --cache-to=type=registry,ref=${_IMAGE}:cache,mode=max \
         --push \
@@ -34,5 +35,5 @@ substitutions:
 
 options:
   dynamicSubstitutions: true
-  machineType: "n1-highcpu-8-gpu"
+  machineType: "E2_HIGHCPU_8"
   logging: CLOUD_LOGGING_ONLY
