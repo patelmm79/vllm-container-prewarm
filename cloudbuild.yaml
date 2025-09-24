@@ -6,8 +6,9 @@ steps:
   args:
     - -c
     - |
-      # Enable the docker-container builder to allow for registry caching
-      docker buildx create --use
+      # Explicitly authenticate Docker with the Artifact Registry for this region.
+      # This is crucial for buildx to access the registry for caching.
+      gcloud auth configure-docker us-central1-docker.pkg.dev
       docker buildx build \
         --tag=${_IMAGE} \
         --secret id=HF_TOKEN,env=HF_TOKEN \
