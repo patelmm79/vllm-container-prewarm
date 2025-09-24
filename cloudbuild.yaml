@@ -8,7 +8,7 @@ steps:
     - -c
     - |
       # Install Docker CLI into the builder environment.
-      apt-get update && apt-get install -y --no-install-recommends docker.io
+      apt-get update && apt-get install -y --no-install-recommends docker.io docker-buildx
 
       # Authenticate Docker with Artifact Registry. This is crucial for buildx caching.
       gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
