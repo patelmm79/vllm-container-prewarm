@@ -17,6 +17,7 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
     echo "Starting vLLM server on CPU for pre-warming..." && \
     python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu & \
+    CUDA_VISIBLE_DEVICES="" python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu & \
     VLLM_PID=$! && \
     echo "Waiting for vLLM server to be healthy (will try for 60 seconds)..." && \
     tries=0; \
