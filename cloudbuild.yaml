@@ -21,6 +21,7 @@ steps:
         --secret id=HF_TOKEN,env=HF_TOKEN \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
         --cache-from=type=registry,ref=${_IMAGE}:cache \
+        --cache-from=type=registry,ref=${_IMAGE}:cache,ignore-error=true \
         --cache-to=type=registry,ref=${_IMAGE}:cache,mode=max \
         --push \
         .
