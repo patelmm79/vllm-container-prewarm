@@ -1,22 +1,14 @@
 steps:
 - name: 'gcr.io/cloud-builders/docker'
-  id: create-builder
-  entrypoint: 'bash'
-  args:
-    - -c
-    - |
-      docker buildx create --name mybuilder --driver docker-container --use
-      docker buildx inspect --bootstrap
-
-- name: 'gcr.io/cloud-builders/docker'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
   args:
     - -c
     - |
+      # Enable the docker-container builder to allow for registry caching
+      docker buildx create --use
       docker buildx build \
-        --builder mybuilder \
         --tag=${_IMAGE} \
         --secret id=HF_TOKEN,env=HF_TOKEN \
         --build-arg BUILDKIT_INLINE_CACHE=1 \
