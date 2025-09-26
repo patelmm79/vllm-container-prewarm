@@ -22,7 +22,7 @@ ENV VLLM_USE_MODELSCOPE=False
 RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     export HF_TOKEN=$(cat /run/secrets/HF_TOKEN) && \
     echo "Downloading model weights..." && \
-    huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
+    hf download ${MODEL_NAME} --local-dir ${HF_HOME} && \
     echo "Model weights downloaded successfully to ${HF_HOME}" && \
     ls -la ${HF_HOME}'
 
