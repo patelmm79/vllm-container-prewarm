@@ -12,8 +12,6 @@ steps:
   args:
     - -c
     - |
-      # Configure Docker auth for Artifact Registry
-      gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
       docker buildx create --use --name mybuilder --driver docker-container
       docker buildx build \
         --tag=${_IMAGE} \
