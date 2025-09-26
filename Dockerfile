@@ -30,8 +30,11 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
 ENV HF_HUB_OFFLINE=1
 
 # Set the entrypoint to start the vLLM OpenAI-compatible server
+# Cloud Run sets PORT=8080, so we use that as default
+ENV PORT=8080
 ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
-    --port ${PORT:-8000} \
+    --port ${PORT} \
+    --host 0.0.0.0 \
     --model ${MODEL_NAME} \
     --device cpu \
     --dtype float32 \
