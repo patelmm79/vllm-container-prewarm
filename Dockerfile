@@ -22,12 +22,16 @@ ENV VLLM_USE_MODELSCOPE=False
 RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     export HF_TOKEN=$(cat /run/secrets/HF_TOKEN) && \
     echo "Downloading model weights..." && \
-    hf download ${MODEL_NAME} --local-dir ${HF_HOME} && \
+    hf download ${MODEL_NAME} --local-dir ${HF_HOME} --local-dir-use-symlinks False && \
     echo "Model weights downloaded successfully to ${HF_HOME}" && \
-    ls -la ${HF_HOME}'
+    ls -la ${HF_HOME} && \
+    echo "Contents of model directory:" && \
+    find ${HF_HOME} -type f -name "*.json" -o -name "*.safetensors" -o -name "*.bin" | head -10'
 
 # Prevent the final container from trying to contact Hugging Face Hub at runtime.
 ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
+ENV HF_DATASETS_OFFLINE=1
 
 # Set the entrypoint to start the vLLM OpenAI-compatible server
 # Cloud Run sets PORT=8080, so we use that as default
@@ -35,7 +39,7 @@ ENV PORT=8080
 ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT} \
     --host 0.0.0.0 \
-    --model ${MODEL_NAME} \
+    --model ${HF_HOME} \
     --dtype float32 \
     --enforce-eager \
     ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
