@@ -9,6 +9,9 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \
     rm -rf /var/lib/apt/lists/*
 
+# Set the logging level to debug to get more information from vLLM.
+ENV VLLM_LOGGING_LEVEL=DEBUG
+
 # Download the model weights from Hugging Face and pre-warm the model.
 # This executes the expensive model loading step during the build process.
 RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
@@ -16,7 +19,6 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     echo "Downloading model weights..." && \
     huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
     echo "Starting vLLM server on CPU for pre-warming (with debug logging)..." && \
-    export VLLM_LOGGING_LEVEL=DEBUG && \
     python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu --dtype float32 & \
     VLLM_PID=$! && \
     echo "Waiting for vLLM server to be healthy (will try for 60 seconds)..." && \
