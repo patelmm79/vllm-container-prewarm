@@ -36,7 +36,6 @@ ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT} \
     --host 0.0.0.0 \
     --model ${MODEL_NAME} \
-    --device cpu \
     --dtype float32 \
     --enforce-eager \
     ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
