@@ -17,7 +17,7 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
     echo "Starting vLLM server on CPU for pre-warming (with debug logging)..." && \
     export VLLM_LOGGING_LEVEL=DEBUG && \
-    python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu & \
+    python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu --dtype float32 & \
     VLLM_PID=$! && \
     echo "Waiting for vLLM server to be healthy (will try for 60 seconds)..." && \
     tries=0; \
@@ -40,4 +40,5 @@ ENV HF_HUB_OFFLINE=1
 ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT:-8000} \
     --model ${MODEL_NAME} \
+    --dtype float32 \
     ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
