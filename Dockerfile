@@ -13,6 +13,9 @@ RUN apt-get update && \
 ENV VLLM_LOGGING_LEVEL=DEBUG
 ENV PYTHONUNBUFFERED=1
 ENV VLLM_LOGGING_CONFIG_PATH=""
+# Force CPU device detection for vLLM
+ENV CUDA_VISIBLE_DEVICES=""
+ENV VLLM_USE_MODELSCOPE=False
 
 # Download the model weights from Hugging Face and pre-warm the model.
 # This executes the expensive model loading step during the build process.
@@ -21,7 +24,7 @@ RUN --mount=type=secret,id=HF_TOKEN /bin/sh -c ' \
     echo "Downloading model weights..." && \
     huggingface-cli download ${MODEL_NAME} --local-dir ${HF_HOME} && \
     echo "Starting vLLM server on CPU for pre-warming (with debug logging)..." && \
-    python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu --dtype float32 --host 127.0.0.1 --port 8000 > /tmp/vllm.log 2>&1 & \
+    CUDA_VISIBLE_DEVICES="" python3 -m vllm.entrypoints.openai.api_server --model ${MODEL_NAME} --device cpu --dtype float32 --host 127.0.0.1 --port 8000 --enforce-eager --disable-log-stats > /tmp/vllm.log 2>&1 & \
     VLLM_PID=$! && \
     echo "vLLM server PID: $VLLM_PID" && \
     echo "Waiting for vLLM server to be healthy (will try for 300 seconds)..." && \
@@ -58,5 +61,7 @@ ENV HF_HUB_OFFLINE=1
 ENTRYPOINT python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT:-8000} \
     --model ${MODEL_NAME} \
+    --device cpu \
     --dtype float32 \
+    --enforce-eager \
     ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
