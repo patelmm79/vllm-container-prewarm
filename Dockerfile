@@ -1,4 +1,4 @@
-FROM vllm/vllm-openai:v0.9.0
+FROM vllm/vllm-openai:v0.10.1
 
 # Set environment variables for vLLM and Hugging Face
 ENV MODEL_NAME=google/gemma-3-1b-it
