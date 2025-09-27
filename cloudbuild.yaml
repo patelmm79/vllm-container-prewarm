@@ -34,5 +34,5 @@ substitutions:
 options:
   dynamicSubstitutions: true
  ## machineType: "E2_HIGHCPU_32"
-  machineType: "E2_HIGHCPU_64"
+  machineType: "E2_HIGHCPU_16"
   logging: CLOUD_LOGGING_ONLY
