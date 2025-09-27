@@ -1,8 +1,6 @@
 FROM vllm/vllm-openai:latest
 
 ENV HF_HOME=/model-cache
-RUN --mount=type=secret,id=HF_TOKEN HF_TOKEN=$(cat /run/secrets/HF_TOKEN) \
-    huggingface-cli download google/gemma-3-1b-it
 
 ENV HF_HUB_OFFLINE=1
 

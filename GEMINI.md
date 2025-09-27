@@ -6,6 +6,23 @@ This project provides the configuration to build a Docker container for serving 
 
 The primary goal is to package the vLLM server with the `gemma-3-1b-it` model into a container image that can be easily deployed. The build process is managed by Google Cloud Build.
 
+## Project Goals and Workflow
+
+### Purpose
+
+The goal of this project is to containerize a small LLM (Gemma 3.1B Instruct) for the fastest possible inference, with a focus on minimizing cold start times. The primary issue being addressed is the slow initial response after periods of inactivity, which may be due to model loading.
+
+### Current Workflow (Manual)
+
+1.  **Build**: A `Dockerfile` is used to create the container image. The build is triggered manually using `gcloud builds submit`.
+2.  **Monitor**: The build logs in Cloud Build are monitored manually for errors.
+3.  **Deploy**: Upon a successful build, the new container image is deployed manually to an existing service in Google Cloud Run.
+
+### Desired Automation and Testing
+
+-   **Automated Deployment**: Automatically deploy the container to Cloud Run if the Cloud Build process completes successfully.
+-   **Post-Deployment Test**: After a successful deployment, run an automated test that calls the Cloud Run service endpoint to verify the LLM is responsive and provides a valid output.
+
 ## Building the Container
 
 The container is built using Google Cloud Build and the configuration is defined in `cloudbuild.yaml`.
