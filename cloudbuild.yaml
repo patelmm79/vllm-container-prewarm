@@ -29,8 +29,9 @@ availableSecrets:
 images: ["${_IMAGE}"]
 
 substitutions:
-  _IMAGE: 'us-central1-docker.pkg.dev/${PROJECT_ID}/vllm-gemma-2-2b-it-repo/vllm-gemma-2-2b-it'
+  _IMAGE: 'us-central1-docker.pkg.dev/${PROJECT_ID}/vllm-gemma-3-1b-it-repo/vllm-gemma-3-1b-it'
 
 options:
   dynamicSubstitutions: true
   machineType: "E2_HIGHCPU_32"
+  logging: CLOUD_LOGGING_ONLY
