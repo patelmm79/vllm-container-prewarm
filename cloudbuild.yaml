@@ -6,22 +6,38 @@ steps:
   args: 
     - -c
     - |
-        SECRET_TOKEN="$$HF_TOKEN" docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN .
+        SECRET_TOKEN="$HF_TOKEN" docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN .
 
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  id: deploy
+  entrypoint: 'gcloud'
+  args: [
+    'run', 'deploy', 'vllm-gemma-3-1b-it',
+    '--image', '${_IMAGE}',
+    '--region', 'us-central1',
+    '--platform', 'managed',
+    '--allow-unauthenticated'
+  ]
 
+- name: 'python:3.9-slim'
+  id: install-dependencies
+  entrypoint: 'pip'
+  args: ['install', '-r', 'requirements-test.txt']
+
+- name: 'python:3.9-slim'
+  id: test
+  entrypoint: 'pytest'
+  args: ['test_endpoint.py']
 
 availableSecrets:
   secretManager:
   - versionName: 'projects/${PROJECT_ID}/secrets/HF_TOKEN/versions/latest'
-  ###- versionName: 'projects/665374072631/secrets/HF_TOKEN/versions/latest'
     env: 'HF_TOKEN'
 
 images: ["${_IMAGE}"]
 
 substitutions:  
   _IMAGE: 'us-central1-docker.pkg.dev/${PROJECT_ID}/vllm-gemma-3-1b-it-repo/vllm-gemma-3-1b-it'
-  ###_IMAGE: 'us-central1-docker.pkg.dev/665374072631/vllm-gemma-2-2b-it-repo/vllm-gemma-2-2b-it'
-  ##665374072631
 
 options:
   dynamicSubstitutions: true
