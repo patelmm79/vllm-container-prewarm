@@ -16,7 +16,8 @@ steps:
     '--image', '${_IMAGE}',
     '--region', 'us-central1',
     '--platform', 'managed',
-    '--allow-unauthenticated'
+    '--allow-unauthenticated',
+    '--execution-environment', 'gen2'
   ]
 
 - name: 'python:3.9-slim'
