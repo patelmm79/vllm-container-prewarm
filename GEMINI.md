@@ -41,6 +41,8 @@ To start the build, run the following `gcloud` command from the root of the repo
 gcloud builds submit --config cloudbuild.yaml
 ```
 
+**Important**: Do NOT pass `HF_TOKEN` via `--substitutions`. The token is automatically injected from Secret Manager. User-defined substitutions must start with an underscore (e.g., `_MY_VAR`).
+
 ### How It Works
 
 The `cloudbuild.yaml` file defines the build steps:
