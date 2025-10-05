@@ -1,12 +1,15 @@
+# HF_TOKEN is automatically injected from Secret Manager (see availableSecrets below)
+# DO NOT pass HF_TOKEN via --substitutions when running gcloud builds submit
+# User-defined substitutions must start with underscore (e.g., _MY_VAR)
 steps:
 - name: 'gcr.io/cloud-builders/docker'
   id: build
   entrypoint: 'bash'
   secretEnv: ['HF_TOKEN']
-  args: 
+  args:
     - -c
     - |
-        SECRET_TOKEN="$HF_TOKEN" docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN .
+        docker buildx build --tag=${_IMAGE} --secret id=HF_TOKEN,env=HF_TOKEN .
 
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   id: deploy
