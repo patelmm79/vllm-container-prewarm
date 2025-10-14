@@ -48,6 +48,8 @@ gcloud builds submit --config cloudbuild.yaml
 - `HF_HUB_OFFLINE`: Set to `1` in final container to prevent runtime Hub access
 - `PORT`: Server port (defaults to 8000)
 - `MAX_MODEL_LEN`: Optional model length limit
+- `VLLM_TORCH_COMPILE_LEVEL`: Set to `0` to disable torch.compile and eliminate 60+ second startup delay
+- `TORCH_CUDA_ARCH_LIST`: Set to `7.5` for NVIDIA T4 GPU optimization
 
 ## Runtime Configuration
 
