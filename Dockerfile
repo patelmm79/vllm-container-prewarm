@@ -14,7 +14,9 @@ ENV TORCH_CUDA_ARCH_LIST="7.5"
 # Adding the container's hostname to /etc/hosts pointing to localhost resolves this.
 # The 'exec' command is used to ensure the python process replaces the shell,
 # allowing it to receive signals correctly for graceful shutdown.
-ENTRYPOINT echo "127.0.0.1 $(hostname)" >> /etc/hosts && \
+# We also increase the file descriptor limit (ulimit) to prevent "Too many open files" errors under load.
+ENTRYPOINT ulimit -n 1048576 && \
+    echo "127.0.0.1 $(hostname)" >> /etc/hosts && \
     exec python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT:-8000} \
     --model ${MODEL_NAME:-google/gemma-3-1b-it} \
