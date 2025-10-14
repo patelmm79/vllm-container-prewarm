@@ -15,8 +15,10 @@ ENV TORCH_CUDA_ARCH_LIST="7.5"
 # The 'exec' command is used to ensure the python process replaces the shell,
 # allowing it to receive signals correctly for graceful shutdown.
 # We also increase the file descriptor limit (ulimit) to prevent "Too many open files" errors under load.
+# Explicitly export TORCH_CUDA_ARCH_LIST to ensure vLLM worker processes inherit it.
 ENTRYPOINT ulimit -n 1048576 && \
     echo "127.0.0.1 $(hostname)" >> /etc/hosts && \
+    export TORCH_CUDA_ARCH_LIST="7.5" && \
     exec python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT:-8000} \
     --model ${MODEL_NAME:-google/gemma-3-1b-it} \
