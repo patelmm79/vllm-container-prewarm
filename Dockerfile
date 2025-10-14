@@ -14,7 +14,9 @@ ENV TORCH_CUDA_ARCH_LIST="7.5"
 # Adding the container's hostname to /etc/hosts pointing to localhost resolves this.
 # The 'exec' command is used to ensure the python process replaces the shell,
 # allowing it to receive signals correctly for graceful shutdown.
+# Explicitly export TORCH_CUDA_ARCH_LIST to ensure it's available to vLLM worker processes
 ENTRYPOINT echo "127.0.0.1 $(hostname)" >> /etc/hosts && \
+    export TORCH_CUDA_ARCH_LIST="7.5" && \
     exec python3 -m vllm.entrypoints.openai.api_server \
     --port ${PORT:-8000} \
     --model ${MODEL_NAME:-google/gemma-3-1b-it} \
