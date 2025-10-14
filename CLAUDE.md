@@ -48,6 +48,11 @@ gcloud builds submit --config cloudbuild.yaml
 - `HF_HUB_OFFLINE`: Set to `1` in final container to prevent runtime Hub access
 - `PORT`: Server port (defaults to 8000)
 - `MAX_MODEL_LEN`: Optional model length limit
+- `VLLM_TORCH_COMPILE_LEVEL`: torch.compile optimization level (default: `1`)
+  - `0`: Disabled (fastest cold start, no compilation overhead)
+  - `1`: Basic compilation (balanced - recommended for most cases)
+  - `2-3`: More aggressive optimization (longer compilation, higher throughput)
+- `SKIP_PREWARM`: Set to `1` to skip the runtime pre-warming phase (not recommended)
 
 ## Runtime Configuration
 
@@ -56,6 +61,46 @@ The container serves the model via vLLM's OpenAI-compatible API with these defau
 - Model: `google/gemma-3-1b-it`
 - Data type: float32
 - Optional max model length via `MAX_MODEL_LEN`
+
+## torch.compile Pre-warming
+
+The container implements a hybrid pre-warming strategy for torch.compile to optimize both cold start time and runtime performance:
+
+### How It Works
+
+1. **On container startup**, the custom entrypoint script (`entrypoint.sh`):
+   - Starts the vLLM server in the background
+   - Waits for the server to become ready
+   - Runs the pre-warming script (`prewarm_compile.py`)
+   - Keeps the server running for normal operation
+
+2. **The pre-warming script** makes test inference requests with common input lengths (128, 256, 512, 1024, 2048 tokens) to trigger torch.compile for those shapes
+
+3. **Compiled kernels are cached** in the container filesystem (`~/.triton`, `~/.inductor-cache`)
+
+4. **Subsequent requests** within the same container instance use the cached compiled kernels for fast execution
+
+### Performance Characteristics
+
+- **First container startup**: ~60s one-time compilation cost
+- **Cache lifetime**: Persists for the lifetime of the container instance
+- **Subsequent requests**: Fast execution with compiled optimizations
+- **Hardware-specific**: Compilation happens on the actual Cloud Run T4 GPU
+
+### Configuration
+
+- Set `VLLM_TORCH_COMPILE_LEVEL=0` to disable torch.compile entirely (no pre-warming, faster cold starts)
+- Set `SKIP_PREWARM=1` to skip pre-warming phase (not recommended unless debugging)
+- Default configuration (`VLLM_TORCH_COMPILE_LEVEL=1`) provides the best balance for most use cases
+
+### Design Rationale
+
+This approach addresses the limitations of build-time pre-compilation:
+- ✅ Compiles on actual target hardware (T4 GPUs in Cloud Run)
+- ✅ No GPU required in Cloud Build environment
+- ✅ Cache is hardware and version-matched
+- ✅ One-time cost per container instance, not per request
+- ✅ Works with Cloud Run's auto-scaling model
 
 ## Security Notes
 

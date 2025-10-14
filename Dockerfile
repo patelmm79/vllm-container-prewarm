@@ -9,17 +9,26 @@ ENV HF_HUB_OFFLINE=1
 # Compute capability 7.5 corresponds to NVIDIA T4
 ENV TORCH_CUDA_ARCH_LIST="7.5"
 
-# Fix for c10d warning: "The hostname of the client socket cannot be retrieved."
-# This occurs in container environments where reverse DNS lookup for the container's IP fails.
-# Adding the container's hostname to /etc/hosts pointing to localhost resolves this.
-# The 'exec' command is used to ensure the python process replaces the shell,
-# allowing it to receive signals correctly for graceful shutdown.
-# We also increase the file descriptor limit (ulimit) to prevent "Too many open files" errors under load.
-# Explicitly export TORCH_CUDA_ARCH_LIST to ensure vLLM worker processes inherit it.
-ENTRYPOINT ulimit -n 1048576 && \
-    echo "127.0.0.1 $(hostname)" >> /etc/hosts && \
-    export TORCH_CUDA_ARCH_LIST="7.5" && \
-    exec python3 -m vllm.entrypoints.openai.api_server \
-    --port ${PORT:-8000} \
-    --model ${MODEL_NAME:-google/gemma-3-1b-it} \
-    ${MAX_MODEL_LEN:+--max-model-len "$MAX_MODEL_LEN"}
+# Enable torch.compile for optimized inference
+# Level 1 provides a good balance of compilation time vs runtime performance
+# The pre-warming script will trigger compilation for common input shapes on container startup,
+# caching the compiled kernels for fast subsequent requests within the same container instance.
+# Set to 0 to disable torch.compile if fast cold starts are more important than throughput.
+ENV VLLM_TORCH_COMPILE_LEVEL=1
+
+# Install requests library for pre-warming script
+RUN pip install --no-cache-dir requests
+
+# Copy pre-warming script and startup script
+COPY prewarm_compile.py /app/prewarm_compile.py
+COPY entrypoint.sh /app/entrypoint.sh
+
+# Make scripts executable
+RUN chmod +x /app/prewarm_compile.py /app/entrypoint.sh
+
+# Use custom entrypoint that handles pre-warming
+# The entrypoint script will:
+# 1. Start vLLM server in background
+# 2. Run pre-warming to trigger torch.compile for common input shapes
+# 3. Keep vLLM server running in foreground for normal operation
+ENTRYPOINT ["/app/entrypoint.sh"]
